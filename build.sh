@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TOMCAT_LIB="/home/tommy/tomcat/lib"
+TOMCAT_LIB="/home/bolton/apache-tomcat-10.0.16/lib"
 
 JAR_NAME="framework.jar"
 BIN_DIR="bin"
