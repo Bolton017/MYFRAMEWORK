@@ -1,9 +1,11 @@
 package controller;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +46,10 @@ public class FrontController extends HttpServlet {
                 // Utilisation de ton annotation @Url
                 if (method.isAnnotationPresent(Url.class)) {
                     Url annotation = method.getAnnotation(Url.class);
-                    String url = annotation.value();
+                    String url = normalizeUrl(annotation.value());
+                    if (url.isBlank()) {
+                        continue;
+                    }
                     
                     // Sécurité : Éviter qu'un développeur mette deux fois la même URL
                     if (routeMapping.containsKey(url)) {
@@ -60,13 +65,61 @@ public class FrontController extends HttpServlet {
         }
     }
 
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // 1. Extraction de l'URL propre (ex: /mon-app/biere -> /biere)
-        String contextPath = request.getContextPath();
-        String requestUri = request.getRequestURI().substring(contextPath.length());
+    private String normalizeUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String normalized = url.trim();
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        return normalized;
+    }
 
-        // 2. Recherche du Mapping associé à cette URL
-        Mapping mapping = routeMapping.get(requestUri);
+    private String toRouteLine(String url, Mapping mapping) {
+        String simpleControllerName = mapping.getClassName();
+        int lastDot = simpleControllerName.lastIndexOf('.');
+        if (lastDot >= 0 && lastDot < simpleControllerName.length() - 1) {
+            simpleControllerName = simpleControllerName.substring(lastDot + 1);
+        }
+        return url + "  " + simpleControllerName + "  " + mapping.getMethod() + "()";
+    }
+
+    private List<String> buildSupportedRouteLines() {
+        List<String> lines = new ArrayList<>();
+        for (Map.Entry<String, Mapping> entry : routeMapping.entrySet()) {
+            lines.add(toRouteLine(entry.getKey(), entry.getValue()));
+        }
+        return lines;
+    }
+
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 1. Extraction de l'URL propre (ex: /mon-app/dept/list -> /dept/list)
+        String contextPath = request.getContextPath();
+        String requestUri = normalizeUrl(request.getRequestURI().substring(contextPath.length()));
+
+        // 2. Vérification par boucle si l'URL demandée est supportée
+        String matchedUrl = null;
+        Mapping mapping = null;
+        for (Map.Entry<String, Mapping> entry : routeMapping.entrySet()) {
+            if (entry.getKey().equals(requestUri)) {
+                matchedUrl = entry.getKey();
+                mapping = entry.getValue();
+                break;
+            }
+        }
+
+        // 3. Option debug: ?showMapping=true -> sortie demandée: URL + contrôleur + méthode
+        String showMappingParam = request.getParameter("showMapping");
+        boolean showMapping = "true".equalsIgnoreCase(showMappingParam);
+
+        if (showMapping && mapping != null) {
+            response.setContentType("text/plain;charset=UTF-8");
+            PrintWriter out = response.getWriter();
+            out.println("URL supportee:");
+            out.println(toRouteLine(matchedUrl, mapping));
+            return;
+        }
 
         if (mapping != null) {
             try {
@@ -112,8 +165,15 @@ public class FrontController extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erreur lors de l'exécution du contrôleur.");
             }
         } else {
-            // Si l'URL n'est pas configurée dans les contrôleurs -> Erreur 404
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Aucun mapping trouvé pour l'URL : " + requestUri);
+            // Si l'URL n'est pas configurée dans les contrôleurs -> 404 + liste des URLs supportées
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType("text/plain;charset=UTF-8");
+            PrintWriter out = response.getWriter();
+            out.println("URL non supportee: " + requestUri);
+            out.println("URLs supportees:");
+            for (String line : buildSupportedRouteLines()) {
+                out.println(line);
+            }
         }
     }
 
