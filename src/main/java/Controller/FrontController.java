@@ -99,7 +99,15 @@ public class FrontController extends HttpServlet {
                     }
 
                     // Exécution de la méthode du contrôleur
-                    methodToInvoke.invoke(controllerInstance, parameters);
+                    Object actionResult = methodToInvoke.invoke(controllerInstance, parameters);
+
+                    // Si la méthode retourne une valeur (ex: String), on l'affiche en réponse.
+                    if (actionResult != null && !response.isCommitted()) {
+                        if (response.getContentType() == null) {
+                            response.setContentType("text/plain;charset=UTF-8");
+                        }
+                        response.getWriter().print(String.valueOf(actionResult));
+                    }
                 } else {
                     throw new NoSuchMethodException();
                 }
