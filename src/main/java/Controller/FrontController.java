@@ -65,6 +65,7 @@ public class FrontController extends HttpServlet {
         }
     }
 
+<<<<<<< Updated upstream
     private String normalizeUrl(String url) {
         if (url == null || url.isBlank()) {
             return "";
@@ -120,14 +121,24 @@ public class FrontController extends HttpServlet {
             out.println(toRouteLine(matchedUrl, mapping));
             return;
         }
+=======
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String contextPath = request.getContextPath();
+        String requestUri = request.getRequestURI().substring(contextPath.length());
+
+        // Sécurité : Si l'URI se termine par un "/" (sauf si c'est la racine exacte), on le nettoie
+        if (requestUri.endsWith("/") && requestUri.length() > 1) {
+            requestUri = requestUri.substring(0, requestUri.length() - 1);
+        }
+
+        Mapping mapping = routeMapping.get(requestUri);
+>>>>>>> Stashed changes
 
         if (mapping != null) {
             try {
-                // Chargement dynamique de la classe du contrôleur
                 Class<?> controllerClass = Class.forName(mapping.getClassName());
                 Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
                 
-                // Recherche de la méthode par son nom
                 Method methodToInvoke = null;
                 for (Method m : controllerClass.getDeclaredMethods()) {
                     if (m.getName().equals(mapping.getMethod())) {
@@ -137,7 +148,6 @@ public class FrontController extends HttpServlet {
                 }
 
                 if (methodToInvoke != null) {
-                    // Préparation dynamique des paramètres à envoyer à la méthode
                     Object[] parameters = new Object[methodToInvoke.getParameterCount()];
                     Class<?>[] paramTypes = methodToInvoke.getParameterTypes();
                     
@@ -147,9 +157,10 @@ public class FrontController extends HttpServlet {
                         } else if (paramTypes[i].equals(HttpServletResponse.class)) {
                             parameters[i] = response;
                         } else {
-                            parameters[i] = null; // Emplacement libre pour de futurs ajouts (ex: Session)
+                            parameters[i] = null;
                         }
                     }
+<<<<<<< Updated upstream
 
                     // Exécution de la méthode du contrôleur
                     Object actionResult = methodToInvoke.invoke(controllerInstance, parameters);
@@ -161,18 +172,19 @@ public class FrontController extends HttpServlet {
                         }
                         response.getWriter().print(String.valueOf(actionResult));
                     }
+=======
+                    methodToInvoke.invoke(controllerInstance, parameters);
+>>>>>>> Stashed changes
                 } else {
                     throw new NoSuchMethodException();
                 }
                 
-            } catch (NoSuchMethodException e) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
-                    "La méthode " + mapping.getMethod() + " est introuvable.");
             } catch (Exception e) {
                 e.printStackTrace();
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erreur lors de l'exécution du contrôleur.");
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erreur lors de l'exécution du contrôleur : " + e.getMessage());
             }
         } else {
+<<<<<<< Updated upstream
             // Si l'URL n'est pas configurée dans les contrôleurs -> 404 + liste des URLs supportées
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.setContentType("text/plain;charset=UTF-8");
@@ -182,6 +194,13 @@ public class FrontController extends HttpServlet {
             for (String line : buildSupportedRouteLines()) {
                 out.println(line);
             }
+=======
+            // Message personnalisé pour valider que le Framework intercepte bien la requête
+            response.setContentType("text/html;charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.getWriter().println("<h2>[Mon Framework] Erreur 404 : Aucune méthode trouvée pour l'URL '" + requestUri + "'</h2>");
+            response.getWriter().println("<p>Routes disponibles : " + routeMapping.keySet() + "</p>");
+>>>>>>> Stashed changes
         }
     }
 
