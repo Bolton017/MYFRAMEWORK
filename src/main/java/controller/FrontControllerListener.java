@@ -32,7 +32,7 @@ public class FrontControllerListener implements ServletContextListener {
             ;
             context.setAttribute("mapping", mapping);
         } catch (Exception e) {
-            System.out.println("Erreur :");
+            System.out.println("Erreur:");
             e.printStackTrace();
         }
     }
