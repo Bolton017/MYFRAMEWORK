@@ -44,7 +44,7 @@ fi
 
 # Générer le fichier .war dans le dossier build
 cd $BUILD_DIR || exit
-jar -cvf $APP_NAME.war .   # Utiliser "." au lieu de "*" évite les bugs de chemins avec jar
+jar -cvf $APP_NAME.war .   # Utiliser "." au lieu de "*" évite les bugs de chemins avec jar e
 cd ..
 
 # Déploiement dans Tomcat
