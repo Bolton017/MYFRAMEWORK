@@ -29,11 +29,11 @@ public class FrontControllerListener implements ServletContextListener {
 
         try {
             ScanAnnotation.generateMap(mapping, CONTROLLER_ANNOTATION, URLMAPPING_ANNOTATION, packageController);
-            ;
             context.setAttribute("mapping", mapping);
         } catch (Exception e) {
             System.out.println("Erreur:");
             e.printStackTrace();
+            // throw e;
         }
     }
 
