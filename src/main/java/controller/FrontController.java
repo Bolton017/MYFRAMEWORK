@@ -32,7 +32,7 @@ public class FrontController extends HttpServlet {
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
-        out.println("Framework de Lucas (LCSFW)");
+        out.println("Framework ");
 
         ServletContext context = req.getServletContext();
 
